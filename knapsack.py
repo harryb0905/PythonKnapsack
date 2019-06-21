@@ -1,6 +1,7 @@
 from selection import selection
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 space_units = [3,   5,   6,   6,   7,   3,   1,   6,   2,   9,   3,   7,   3,   4,   6,  9]
 amounts     = [1.1, 5.1, 0.2, 4.4, 9.1, 0.4, 9.5, 1.8, 3.7, 2.2, 0.9, 4.3, 2.8, 1.1, 4.9, 2.4]
@@ -8,7 +9,7 @@ amounts     = [1.1, 5.1, 0.2, 4.4, 9.1, 0.4, 9.5, 1.8, 3.7, 2.2, 0.9, 4.3, 2.8, 
 max_space = 40
 chromosome_len = len(space_units)
 
-gens = 10 # No of generations/iterations
+gens = 200 # No of generations/iterations
 
 crossover_prob = 0.8
 mutation_prob = 0.2
@@ -17,18 +18,18 @@ population_size = 20 # No of chromosomes in population
 
 population = np.zeros((population_size, chromosome_len)) # Generate random population of "population_size" chromosomes
 
+# Initialise random population
 for i in range(population_size):
     temp_chromosome = np.random.randint(2, size=chromosome_len)
     while (sum(np.multiply(temp_chromosome, space_units)) > max_space):
         temp_chromosome = np.random.randint(2, size=chromosome_len)
-
     population[i, :] = temp_chromosome
 
 # Add extra column at the end for fitness scores
 fitness_cols = np.zeros((population.shape[0], 1))
-population = np.concatenate((population,fitness_cols), axis = 1)
+population = np.concatenate((population,fitness_cols), axis=1)
 population_new_num = 2
-fittest = np.array([])
+fittest = []
 
 # Repeat for each new generation
 for k in range(gens):
@@ -41,9 +42,10 @@ for k in range(gens):
     new_population = np.zeros((population_size, chromosome_len))
     new_population[0:2, :] = population[population_size-2:population_size, 0:16]
     population_new_num = 2
+    fittest.append(population[-1][-1])
 
     # Repeat until new population is full
-    if (population_new_num < population_size):
+    while (population_new_num < population_size-1):
         # Weights = fitness of each chromosome / sum of total fitness of all chromosomes
         weights = population[:, 16] / sum(population[:, 16])
 
@@ -66,12 +68,12 @@ for k in range(gens):
         # Mutation prob and random pick bit to switch (bit flip)
         if (random.uniform(0, 1) < mutation_prob):
             # Mutate first offspring
-            point_1 = random.randint(0,2)
+            point_1 = random.randint(0, len(offspring_1)-1)
             offspring_1[point_1] = 1 - offspring_1[point_1]
 
         if (random.uniform(0, 1) < mutation_prob):
             # Mutate second offspring
-            point_2 = random.randint(0, 2)
+            point_2 = random.randint(0, len(offspring_2)-1)
             offspring_2[point_2] = 1 - offspring_2[point_2]
 
         # Put in new population if within max space
@@ -80,13 +82,12 @@ for k in range(gens):
             new_population[population_new_num, :] = offspring_1
 
         if (sum(np.multiply(offspring_2, space_units)) <= max_space):
-            if (population_new_num < 20):
+            if (population_new_num < population_size-1):
                 population_new_num += 1
                 new_population[population_new_num, :] = offspring_2
 
-        # Replace, last column not updated yet
-        population[:, 0:16] = new_population
-        np.concatenate((fittest, population[-1]))
+    # Replace, last column not updated yet
+    population[:, 0:16] = new_population
 
 # Evaluate fitness scores and rank them
 for i in range(population_size):
@@ -94,4 +95,14 @@ for i in range(population_size):
 
 population = population[population[:, 16].argsort()]
 best = population[-1]
+fittest.append(best[-1])
+print(fittest)
 print('Fittest solution:', best[:-1], 'with amount of £%.2f' % best[-1])
+
+plt.plot(range(0,gens+1), fittest, linewidth=3)
+plt.axis([0, gens+1, min(fittest)-0.1*min(fittest), max(fittest)+0.1*max(fittest)])
+# Set x axes label.
+plt.xlabel("Generation", fontsize=10)
+# Set y axes label.
+plt.ylabel("Fitness", fontsize=10)
+plt.show()
