@@ -9,7 +9,7 @@ amounts     = [1.1, 5.1, 0.2, 4.4, 9.1, 0.4, 9.5, 1.8, 3.7, 2.2, 0.9, 4.3, 2.8, 
 max_space = 40
 chromosome_len = len(space_units)
 
-gens = 200 # No of generations/iterations
+gens = 50 # No of generations/iterations
 
 crossover_prob = 0.8
 mutation_prob = 0.2
@@ -30,6 +30,19 @@ fitness_cols = np.zeros((population.shape[0], 1))
 population = np.concatenate((population,fitness_cols), axis=1)
 population_new_num = 2
 fittest = []
+xs = []
+
+# Set x axes label.
+plt.title('Knapsack GA', pad=10)
+plt.xlabel("Generation", fontsize=10)
+# Set y axes label.
+plt.ylabel("Fitness", fontsize=10)
+
+def get_next_ten(n):
+    return ((n + 9) // 10 * 10)
+
+def round_down(num, divisor=10):
+    return num - (num%divisor)
 
 # Repeat for each new generation
 for k in range(gens):
@@ -43,6 +56,13 @@ for k in range(gens):
     new_population[0:2, :] = population[population_size-2:population_size, 0:16]
     population_new_num = 2
     fittest.append(population[-1][-1])
+    xs.append(k)
+
+    # Plot results over time
+    plt.plot(xs, fittest, linewidth=2, color='r')
+    plt.axis([0, gens + 1, round_down(min(fittest)), get_next_ten(max(fittest))])
+    plt.legend(['Fittest: £%.2f' % fittest[-1]])
+    plt.pause(0.05)
 
     # Repeat until new population is full
     while (population_new_num < population_size-1):
@@ -95,14 +115,12 @@ for i in range(population_size):
 
 population = population[population[:, 16].argsort()]
 best = population[-1]
-fittest.append(best[-1])
-print(fittest)
-print('Fittest solution:', best[:-1], 'with amount of £%.2f' % best[-1])
+fittest[-1] = best[-1]
 
-plt.plot(range(0,gens+1), fittest, linewidth=3)
-plt.axis([0, gens+1, min(fittest)-0.1*min(fittest), max(fittest)+0.1*max(fittest)])
-# Set x axes label.
-plt.xlabel("Generation", fontsize=10)
-# Set y axes label.
-plt.ylabel("Fitness", fontsize=10)
+# Final plot
+plt.plot(xs, fittest, linewidth=2, color='r')
+plt.axis([0, gens + 1, round_down(min(fittest)), get_next_ten(max(fittest))])
+plt.legend(['Fittest: £%.2f' % fittest[-1]])
 plt.show()
+
+print('Fittest solution:', best[:-1], 'with amount of £%.2f' % best[-1])
